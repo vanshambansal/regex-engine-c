@@ -1,0 +1,20 @@
+# Compiled binaries and executables
+*.exe
+*.o
+*.obj
+*.out
+regex_engine
+test_tokenizer
+test_parser
+test_nfa
+test_simulate
+
+# IDE and editor files
+.vscode/
+.vs/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
