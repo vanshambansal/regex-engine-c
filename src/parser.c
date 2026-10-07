@@ -254,3 +254,12 @@ ASTNode *parse(TokenList *tokens, char *error_msg) {
 
     return result;
 }
+
+void free_ast(ASTNode *root) {
+    if (!root) {
+        return;
+    }
+    free_ast(root->left);
+    free_ast(root->right);
+    free(root);
+}
