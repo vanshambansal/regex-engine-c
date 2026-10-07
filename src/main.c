@@ -18,6 +18,7 @@ static void print_usage(const char *prog_name) {
     printf("Usage: %s <pattern> [text] [options]\n", prog_name);
     printf("Options:\n");
     printf("  --tree      Print the Abstract Syntax Tree (AST)\n");
+    printf("  --trace     Print step-by-step NFA simulation trace\n");
 }
 
 static void print_ast_tree(const ASTNode *node, const char *prefix, int is_last) {
@@ -82,6 +83,18 @@ static void print_ast_tree(const ASTNode *node, const char *prefix, int is_last)
     }
 }
 
+static void print_state_list(const StateSet *set) {
+    printf("{ ");
+    if (set->count == 0) {
+        printf("%sEMPTY%s", COLOR_RED, COLOR_RESET);
+    } else {
+        for (int i = 0; i < set->count; i++) {
+            printf("%d%s", set->states[i], (i + 1 < set->count) ? ", " : "");
+        }
+    }
+    printf(" }");
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         print_usage(argv[0]);
@@ -91,10 +104,13 @@ int main(int argc, char *argv[]) {
     const char *pattern = NULL;
     const char *text = NULL;
     int show_tree = 0;
+    int show_trace = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--tree") == 0) {
             show_tree = 1;
+        } else if (strcmp(argv[i], "--trace") == 0) {
+            show_trace = 1;
         } else if (!pattern) {
             pattern = argv[i];
         } else if (!text) {
@@ -133,7 +149,44 @@ int main(int argc, char *argv[]) {
     NFA nfa;
     build_nfa(ast, &nfa);
 
-    int matched = simulate_nfa(&nfa, text);
+    int matched = 0;
+
+    if (show_trace) {
+        printf("\n%s=== NFA Simulation Trace ===%s\n", COLOR_BOLD, COLOR_RESET);
+        printf("Pattern:      %s\n", pattern);
+        printf("Input Text:   \"%s\"\n", text);
+        printf("Start State:  %d\n", nfa.start_state);
+        printf("Accept State: %d\n\n", nfa.accept_state);
+
+        StateSet current;
+        stateset_init(&current);
+        stateset_add(&current, nfa.start_state);
+        compute_epsilon_closure(&nfa, &current);
+
+        printf("%s[Init]%s       Active states after e-closure: ", COLOR_BOLD COLOR_CYAN, COLOR_RESET);
+        print_state_list(&current);
+        printf("\n");
+
+        StateSet next;
+        int len = strlen(text);
+        for (int i = 0; i < len; i++) {
+            step_nfa(&nfa, &current, text[i], &next);
+            current = next;
+
+            printf("%s[Char '%c']%s   Active states after e-closure: ", COLOR_BOLD COLOR_YELLOW, text[i], COLOR_RESET);
+            print_state_list(&current);
+            printf("\n");
+        }
+
+        matched = current.in_set[nfa.accept_state] ? 1 : 0;
+        printf("\n%s[Result]%s     Accept state %d reached: %s%s%s\n\n",
+               COLOR_BOLD, COLOR_RESET, nfa.accept_state,
+               matched ? COLOR_BOLD COLOR_GREEN : COLOR_BOLD COLOR_RED,
+               matched ? "YES" : "NO",
+               COLOR_RESET);
+    } else {
+        matched = simulate_nfa(&nfa, text);
+    }
 
     free_ast(ast);
 
