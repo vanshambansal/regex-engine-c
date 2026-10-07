@@ -25,7 +25,7 @@ static void print_ast_tree(const ASTNode *node, const char *prefix, int is_last)
         return;
     }
 
-    printf("%s%s%s%s", COLOR_DIM, prefix, is_last ? "└── " : "├── ", COLOR_RESET);
+    printf("%s%s%s%s", COLOR_DIM, prefix, is_last ? "\\-- " : "+-- ", COLOR_RESET);
 
     switch (node->type) {
         case NODE_LITERAL:
@@ -72,7 +72,7 @@ static void print_ast_tree(const ASTNode *node, const char *prefix, int is_last)
     }
 
     char new_prefix[512];
-    snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_last ? "    " : "│   ");
+    snprintf(new_prefix, sizeof(new_prefix), "%s%s", prefix, is_last ? "    " : "|   ");
 
     if (node->type == NODE_SEQ || node->type == NODE_ALT) {
         print_ast_tree(node->left, new_prefix, 0);
