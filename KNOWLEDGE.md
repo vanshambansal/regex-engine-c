@@ -100,7 +100,7 @@ Abstract Syntax Tree (AST)
 Thompson NFA Builder
      |
      v
-Epsilon-NFA
+ε-NFA (Epsilon-NFA)
      |
      v
 NFA Simulator
@@ -116,7 +116,7 @@ Each stage has a separate responsibility.
 | Tokenizer | Recognizes meaningful symbols in the pattern |
 | Parser | Determines how the symbols are structured |
 | AST | Stores the logical structure of the pattern |
-| NFA builder | Converts the AST into a finite-state machine |
+| NFA builder | Converts the AST into a finite-state machine (ε-NFA) |
 | Simulator | Executes the machine against the input |
 | CLI | Accepts input and presents results |
 | JSON exporter | Serializes internal structures for external tools |
@@ -190,7 +190,7 @@ describes:
 ...
 ```
 
-The empty string is written as \(\varepsilon\) in formal-language theory. It contains zero characters.
+The empty string is written as ε (epsilon) in formal-language theory. It contains zero characters.
 
 Similarly:
 
@@ -200,9 +200,9 @@ a|b
 
 describes the set:
 
-\[
-\{a,b\}
-\]
+```text
+{a, b}
+```
 
 And:
 
@@ -212,9 +212,9 @@ And:
 
 describes:
 
-\[
-\{\varepsilon, ab, abab, ababab,\ldots\}
-\]
+```text
+{ε, ab, abab, ababab, ...}
+```
 
 This viewpoint is important: the engine is recognizing whether a string belongs to the language described by a pattern.
 
@@ -253,13 +253,13 @@ These concepts form the mathematical foundation of the engine.
 
 ## 3.1 Alphabet
 
-An **alphabet**, usually represented by \(\Sigma\), is a set of symbols.
+An **alphabet**, usually represented by Σ (Sigma), is a set of symbols.
 
 For a simple example:
 
-\[
-\Sigma = \{a,b\}
-\]
+```text
+Σ = {a, b}
+```
 
 The symbols available are `a` and `b`.
 
@@ -273,9 +273,9 @@ A string is a finite sequence of symbols from an alphabet.
 
 If:
 
-\[
-\Sigma = \{a,b\}
-\]
+```text
+Σ = {a, b}
+```
 
 then these are valid strings:
 
@@ -288,21 +288,21 @@ aab
 bbab
 ```
 
-The empty string, \(\varepsilon\), is also a valid string.
+The empty string, ε (epsilon), is also a valid string.
 
-The length of a string \(w\) is written as \(|w|\).
+The length of a string w is written as |w|.
 
 For example:
 
-\[
+```text
 |abba| = 4
-\]
+```
 
 while:
 
-\[
-|\varepsilon| = 0
-\]
+```text
+|ε| = 0
+```
 
 ## 3.3 Language
 
@@ -310,9 +310,9 @@ A **language** is a set of strings over an alphabet.
 
 For example:
 
-\[
-L = \{a,ab,abb,abbb,\ldots\}
-\]
+```text
+L = {a, ab, abb, abbb, ...}
+```
 
 This language contains `a` followed by zero or more `b` characters.
 
@@ -733,12 +733,12 @@ The graph contains:
 
 - States for literal transitions
 - ε-transitions for branching and repetition
-- A designated start state
-- A designated accepting state
+- A designated start state (q0)
+- A designated accepting state (F)
 
 ## Stage 6: Simulation
 
-The simulator begins at the NFA start state.
+The simulator begins at the NFA start state (q0).
 
 It processes the input character by character, tracking all states reachable after each consumed character and the relevant ε-transitions.
 
@@ -1315,13 +1315,19 @@ A machine processes input by moving between states according to its transition r
 
 ## 11.1 Basic Components
 
-A finite automaton contains:
+In formal automata theory, a finite automaton is defined as a 5-tuple:
 
-- A finite set of states
-- An input alphabet
-- A transition relation or transition function
-- A start state
-- One or more accepting states
+```text
+M = (Q, Σ, δ, q0, F)
+```
+
+Where:
+
+- Q: A finite set of states
+- Σ (Sigma): A finite input alphabet
+- δ (delta): A transition function or relation determining moves between states
+- q0 (where q0 ∈ Q): A designated start state
+- F (where F ⊆ Q): A set of accepting (or final) states
 
 A state represents the machine's current progress toward recognizing a pattern.
 
@@ -1415,11 +1421,17 @@ An NFA transition contains information such as:
 - The target state
 - The character or condition associated with the transition
 
-A character transition consumes input.
+In formal language theory, the transition relation δ for an ε-NFA maps a state and a transition symbol (an input symbol from Σ or the empty string ε) to a subset of states in the power set P(Q):
 
-An epsilon transition does not.
+```text
+δ: Q × (Σ ∪ {ε}) → P(Q)
+```
 
-The exact structure of transitions is defined in the project's NFA headers.
+A character transition consumes an input character from Σ.
+
+An epsilon transition (ε) consumes no input.
+
+The exact structure of transitions is defined in the project's NFA headers (`include/regex/nfa.h`).
 
 ## 12.3 Why Use an NFA?
 
@@ -1436,7 +1448,7 @@ This is simpler than trying to create a separate, manually designed state machin
 
 ## 13.1 What Is an Epsilon Transition?
 
-An epsilon transition, written \(\varepsilon\), moves the automaton from one state to another without consuming an input character.
+An epsilon transition, written ε (epsilon), moves the automaton from one state to another without consuming an input character.
 
 For example:
 
@@ -1464,10 +1476,10 @@ This allows Thompson's construction to combine smaller automata without requirin
 
 ## 13.3 Epsilon Closure
 
-The **epsilon closure** of a set of states is the set containing:
+The **epsilon closure**, formally written as `ε-closure(S)` for a state set `S`, is the set containing:
 
 1. Every state already in the set.
-2. Every state reachable from those states using zero or more epsilon transitions.
+2. Every state reachable from those states using zero or more epsilon transitions (ε).
 
 For example:
 
@@ -1735,26 +1747,26 @@ This is the central idea of NFA simulation.
 
 Let:
 
-- \(Q\) be the set of NFA states.
-- \(S\) be the current active-state set.
-- \(c\) be the next input character.
-- \(\delta(S,c)\) be the set of targets reachable from states in \(S\) through transitions that consume \(c\).
+- Q be the set of NFA states.
+- S be the current active-state set.
+- c be the next input character (c ∈ Σ).
+- δ(S, c) be the transition function: the set of targets reachable from states in S through transitions that consume c.
 
-The simulator repeatedly computes the next set and its epsilon closure.
+The simulator repeatedly computes the next set and its epsilon closure (ε-closure).
 
 Conceptually:
 
 ```text
-active = epsilon_closure({start_state})
+active = ε-closure({start_state})
 
 for each character c in input:
-    next_states = empty set
+    next_states = ∅ (empty set)
 
     for each state in active:
         for each matching character transition:
             add its target to next_states
 
-    active = epsilon_closure(next_states)
+    active = ε-closure(next_states)
 
 if accept_state is in active:
     MATCH
@@ -1830,11 +1842,11 @@ Consider:
 a*
 ```
 
-The NFA must be able to accept the empty string without consuming a character.
+The NFA must be able to accept the empty string (ε) without consuming a character.
 
-If the simulator checks only character transitions, it may fail to discover the accepting state reachable through epsilon transitions.
+If the simulator checks only character transitions, it may fail to discover the accepting state reachable through epsilon transitions (ε-transitions).
 
-Epsilon closure ensures that every state reachable without consuming input is considered.
+Epsilon closure (ε-closure) ensures that every state reachable without consuming input is considered.
 
 ## 15.5 Full-String Acceptance
 
@@ -2092,8 +2104,8 @@ Complexity describes how the amount of work or memory changes as the regex and i
 
 Let:
 
-- \(m\) be the size of the regex or, more precisely for simulation, the number of NFA states.
-- \(n\) be the length of the input string.
+- m be the size of the regex or, more precisely for simulation, the number of NFA states.
+- n be the length of the input string.
 
 For Thompson construction, the generated NFA is linear in the size of the supported regex representation, subject to implementation details such as how bounded repetitions are expanded.
 
@@ -2105,9 +2117,9 @@ In a typical implementation, processing one character can examine transitions as
 
 A common upper-bound description is:
 
-\[
-O(mn)
-\]
+```text
+O(m * n)
+```
 
 This is the basis for the predictable behavior of Thompson-style NFA simulation.
 
@@ -2121,9 +2133,9 @@ The simulator also needs storage for active and next-state sets and any worklist
 
 For a straightforward implementation, these structures can be bounded in terms of the number of NFA states:
 
-\[
+```text
 O(m)
-\]
+```
 
 excluding input storage and other separately allocated structures.
 
@@ -2634,7 +2646,7 @@ These extensions should preserve the separation between parsing, automata constr
 | Term | Meaning |
 |---|---|
 | Regex | A notation for describing a pattern of strings |
-| Alphabet | A set of symbols |
+| Alphabet (Σ) | A set of symbols |
 | String | A finite sequence of symbols |
 | Language | A set of strings |
 | Regular language | A language recognizable by a finite automaton |
@@ -2651,9 +2663,9 @@ These extensions should preserve the separation between parsing, automata constr
 | State | A position or configuration in an automaton |
 | Transition | A permitted movement between states |
 | Accepting state | A state indicating that the consumed input can be accepted |
-| Epsilon transition | A transition that consumes no input |
-| Epsilon closure | All states reachable through zero or more epsilon transitions |
-| Thompson construction | An algorithm that converts a regex into an epsilon-NFA |
+| Epsilon transition (ε) | A transition that consumes no input |
+| Epsilon closure (ε-closure) | All states reachable through zero or more epsilon transitions |
+| Thompson construction | An algorithm that converts a regex into an ε-NFA (epsilon-NFA) |
 | Active-state set | The states the NFA may occupy after consuming an input prefix |
 | Backtracking | A matching strategy that revisits earlier choices when a path fails |
 | Full-string matching | Checking whether the entire input matches the pattern |
@@ -2681,7 +2693,7 @@ AST
    |
    | Thompson Construction
    v
-Epsilon-NFA
+ε-NFA (Epsilon-NFA)
    |
    | NFA Simulation
    v

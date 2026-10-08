@@ -44,7 +44,7 @@ Instead of using recursive backtracking, this project compiles a regex pattern t
 1. Breaks raw text into tokens (Lexer)
 2. Builds an Abstract Syntax Tree (Parser)
 3. Converts the tree into a state machine graph (Thompson NFA Builder)
-4. Simulates all candidate states at the same time (Virtual Machine Simulator)
+4. Simulates all candidate states at the same time (Virtual Machine Simulator with ε-closure tracking)
 
 The core engine is completely decoupled from I/O and printing, making it easy to embed, test, or export data to external tools and web frontends.
 
@@ -120,7 +120,7 @@ Pattern String: "a(b|c)*d"
        │  ASTNode* (Root)
        ▼
 ┌──────────────┐
-│ NFA Builder  │  Turns AST into state-machine fragments linked by epsilon-moves
+│ NFA Builder  │  Turns AST into state-machine fragments linked by ε-moves (epsilon transitions)
 └──────┬───────┘
        │  NFA (Flat State Table)
        ▼
@@ -144,11 +144,11 @@ Pattern String: "a(b|c)*d"
    - Includes `free_ast(root)` to free all allocated nodes after execution.
 3. **Thompson NFA Builder (`include/regex/nfa.h`, `include/regex/nfa_builder.h`, `src/nfa_builder.c`)**:
    - Converts tree nodes into reusable NFA fragments (each with one start and one accept state).
-   - Links fragments with free epsilon-transitions (teleporters).
+   - Links fragments with free epsilon (ε) transitions.
    - Stores all states in a flat array (`nfa->states`) indexed by numbers (`0, 1, 2...`) to avoid pointer chasing.
 4. **Simulator (`include/regex/simulate.h`, `src/simulate.c`)**:
    - Tracks a set of active states (`StateSet`) at each step.
-   - Computes the epsilon-closure using a simple worklist loop to find all reachable free moves.
+   - Computes the epsilon closure (ε-closure) using a simple worklist loop to find all reachable free moves.
    - Steps characters across all active states simultaneously in linear time.
 5. **CLI & Serialization (`src/main.c`, `src/json_export.c`)**:
    - Handles terminal flags: `--tree` (indented AST view), `--trace` (live state machine walk), and `--json` (exports AST and NFA data).
@@ -325,13 +325,13 @@ regex-engine-c/
 │   ├── parser.h            # parse() and free_ast() prototypes
 │   ├── nfa.h               # MatchType, Transition, NFAState, NFA structures
 │   ├── nfa_builder.h       # build_nfa() prototype
-│   ├── simulate.h          # StateSet, epsilon-closure, simulate_nfa() prototypes
+│   ├── simulate.h          # StateSet, ε-closure, simulate_nfa() prototypes
 │   └── json_export.h       # export_ast_json() and export_nfa_json() prototypes
 ├── src/                    # Source files (Core logic)
 │   ├── tokenizer.c         # Lexical scanner
 │   ├── parser.c            # Recursive descent parser & free_ast()
 │   ├── nfa_builder.c       # Thompson fragment builder
-│   ├── simulate.c          # Multi-state simulator & epsilon closure
+│   ├── simulate.c          # Multi-state simulator & ε-closure
 │   ├── json_export.c       # JSON serialization functions
 │   └── main.c              # CLI interface with --tree, --trace, --json
 ├── tests/                  # Unit test suites
@@ -357,7 +357,7 @@ regex-engine-c/
 ├────────────────────┼───────────────────────────────┼───────────────────────────────┤
 │ Execution Strategy │ Single branch at a time       │ All candidate states at once  │
 │ Worst-case Runtime │ O(2^n) - Exponential (Slow)   │ O(m * n) - Always Linear      │
-│ State Machine      │ Implicit call stack           │ Explicit NFA graph with jumps │
+│ State Machine      │ Implicit call stack           │ Explicit ε-NFA graph          │
 │ Memory Layout      │ Recursive stack frames        │ Flat static array             │
 │ Performance Risk   │ Freezes on pathological input │ Never freezes or hangs        │
 └────────────────────┴───────────────────────────────┴───────────────────────────────┘
