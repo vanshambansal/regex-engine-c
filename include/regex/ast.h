@@ -28,7 +28,7 @@ typedef struct ASTNode {
     int max;                  // used by RANGE ({...,n}), -1 means "no upper bound"
 
     int negate;                // used by CHAR_CLASS ([^...] vs [...])
-    char class_chars[128];      // used by CHAR_CLASS — which characters are in the set
+    char class_chars[128];      // used by CHAR_CLASS - which characters are in the set
     int class_char_count;       // how many entries in class_chars are filled
 
 } ASTNode;

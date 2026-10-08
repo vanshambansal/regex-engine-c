@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -Iinclude
+CFLAGS = -Wall -Wextra -std=c17 -Iinclude
 
 SRC = src/tokenizer.c src/parser.c src/nfa_builder.c src/simulate.c src/json_export.c src/main.c
 OUT = regex_engine
