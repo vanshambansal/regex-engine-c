@@ -4,6 +4,7 @@
 #include "regex/parser.h"
 #include "regex/nfa_builder.h"
 #include "regex/simulate.h"
+#include "regex/json_export.h"
 
 // ANSI Color Codes for terminal formatting
 #define COLOR_RESET   "\033[0m"
@@ -19,6 +20,7 @@ static void print_usage(const char *prog_name) {
     printf("Options:\n");
     printf("  --tree      Print the Abstract Syntax Tree (AST)\n");
     printf("  --trace     Print step-by-step NFA simulation trace\n");
+    printf("  --json      Export AST and NFA as JSON\n");
 }
 
 static void print_ast_tree(const ASTNode *node, const char *prefix, int is_last) {
@@ -105,12 +107,15 @@ int main(int argc, char *argv[]) {
     const char *text = NULL;
     int show_tree = 0;
     int show_trace = 0;
+    int show_json = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--tree") == 0) {
             show_tree = 1;
         } else if (strcmp(argv[i], "--trace") == 0) {
             show_trace = 1;
+        } else if (strcmp(argv[i], "--json") == 0) {
+            show_json = 1;
         } else if (!pattern) {
             pattern = argv[i];
         } else if (!text) {
@@ -134,6 +139,20 @@ int main(int argc, char *argv[]) {
     if (!ast) {
         fprintf(stderr, "%sParser error:%s %s\n", COLOR_BOLD COLOR_RED, COLOR_RESET, error_msg);
         return 2;
+    }
+
+    if (show_json) {
+        NFA nfa;
+        build_nfa(ast, &nfa);
+
+        printf("{\"pattern\":\"%s\",\"ast\":", pattern);
+        export_ast_json(ast, stdout);
+        printf(",\"nfa\":");
+        export_nfa_json(&nfa, stdout);
+        printf("}\n");
+
+        free_ast(ast);
+        return 0;
     }
 
     if (show_tree) {
